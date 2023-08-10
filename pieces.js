@@ -1,8 +1,20 @@
-import { ajoutListenersAvis } from "./avis.js";
+import { ajoutListenersAvis,ajoutListenerEnvoyerAvis,afficherAvis,afficherGraphiqueAvis} from "./avis.js";
+let pieces = window.localStorage.getItem('pieces');
 
-// Récuperer des pièces depuis le fichier depuis le fichier JSON
-const reponse = await fetch("http://localhost:8081/pieces/");
-const pieces = await reponse.json();
+if(pieces === null){
+    // Récuperer des pièces depuis le fichier depuis le fichier JSON
+    const reponse = await fetch("http://localhost:8081/pieces/");
+    const pieces = await reponse.json();
+    // Transformation des pièces en JSON:
+    const valeurPieces = JSON.stringify(pieces);
+    // Stockage des informations dans le localStorage
+    window.localStorage.setItem('pieces',valeurPieces);
+}else{
+    pieces =JSON.parse(pieces);
+}    
+// Appel de la fonction pour ajouter le listener au formulaire:
+ajoutListenerEnvoyerAvis()
+
 
 // AFFICHER TOUT LES PIECES
 function genererPieces(pieces){ 
@@ -35,6 +47,7 @@ function genererPieces(pieces){
         dispoElement.innerText = article.disponibilite ? "En Stock":"(No-Stock)";
         // BOUTON AVIS
         const btnAvisElement = document.createElement('button');
+        // Recupere les éléement parents auxquels ajouter les avis + tard:
         btnAvisElement.dataset.id = article.id;
         btnAvisElement.textContent = "Afficher les avis";
 
@@ -55,9 +68,22 @@ function genererPieces(pieces){
     pieceElement.appendChild(btnAvisElement);
     }
      // Apport fonction -- avis (avis.js)
-     ajoutListenersAvis();  
+    ajoutListenersAvis();  
 }
 genererPieces(pieces);
+
+// Boucle qui parcours toutes les pièces :
+for(let i = 0;i<pieces.length;i++){
+    const id = pieces[i].id;
+    const avisJSON = window.localStorage.getItem(`avis-place-${id}`);
+    const avis = JSON.parse(avisJSON);
+
+    if(avis !== null){
+        const pieceElement = document.querySelector(`article[data-id="${id}"`);
+        afficherAvis(pieceElement,avis)
+    }
+}
+
 
 
 //réordonnez les fiches produits grâces à la fonction sort:
@@ -169,6 +195,14 @@ inputPrixMax.addEventListener('change', ()=>{
     document.querySelector(".fiches").innerHTML="";
     genererPieces(pieceFiltrees);
 });
+
+// Ajoute du listener pour mettre à jour des données du localStorage
+const boutonMettreAJour = document.querySelector(".btn-maj");
+boutonMettreAJour.addEventListener('click', function(){
+    window.localStorage.removeItem("pieces");
+});
+
+await afficherGraphiqueAvis();
 
 
 
